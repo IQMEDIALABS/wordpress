@@ -2157,6 +2157,7 @@ function upgrade_460() {
  * @deprecated 5.1.0
  */
 function upgrade_500() {
+	_deprecated_function( __FUNCTION__, '5.1.0' );
 }
 
 /**
