@@ -1035,7 +1035,6 @@ function _build_block_template_result_from_post( $post ) {
 		);
 	}
 
-
 	return $template;
 }
 
