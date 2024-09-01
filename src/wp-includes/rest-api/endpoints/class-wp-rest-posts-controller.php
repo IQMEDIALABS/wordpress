@@ -1152,6 +1152,19 @@ class WP_REST_Posts_Controller extends WP_REST_Controller {
 			}
 		}
 
+		// Don't overwrite the "update_post_meta_cache" value if it is already defined.
+		if ( ! isset( $query_args['update_post_meta_cache'] ) ) {
+			$object_subtype         = isset( $query_args['post_type'] ) ? $query_args['post_type'] : '';
+			$should_prime_meta_keys = ! empty( get_registered_meta_keys( 'post', $object_subtype ) );
+			/**
+			 * Performance optimization: if there are no registered meta keys,
+			 * set "update_post_meta_cache" to false to avoid unnecessary priming of metadata.
+			 */
+			if ( ! $should_prime_meta_keys ) {
+				$query_args['update_post_meta_cache'] = false;
+			}
+		}
+
 		return $query_args;
 	}
 

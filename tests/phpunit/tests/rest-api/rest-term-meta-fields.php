@@ -1332,6 +1332,100 @@ class WP_Test_REST_Term_Meta_Fields extends WP_Test_REST_TestCase {
 	}
 
 	/**
+	 * @ticket 57749
+	 *
+	 * @covers WP_REST_Terms_Controller::get_items
+	 *
+	 * @dataProvider data_term_meta_cache_is_primed_when_there_are_registered_keys
+	 *
+	 * @param string $taxonomy The taxonomy being tested.
+	 * @param string $route    The REST API route to query for the test.
+	 */
+	public function test_term_meta_cache_is_primed_when_there_are_registered_keys( $taxonomy, $route ) {
+		global $wp_meta_keys;
+		$wp_meta_keys = array();
+
+		register_term_meta(
+			$taxonomy,
+			'test_meta_key',
+			array(
+				'show_in_rest' => true,
+			)
+		);
+
+		$action = new MockAction();
+		add_filter( 'pre_get_terms', array( $action, 'action' ), 10, 2 );
+
+		$request = new WP_REST_Request( 'GET', $route );
+		rest_get_server()->dispatch( $request );
+
+		unregister_term_meta( $taxonomy, 'test_meta_key' );
+
+		if ( empty( $action->get_args()[0][0]->query_vars ) || ! is_array( $action->get_args()[0][0]->query_vars ) ) {
+			$this->fail( 'Query vars were not captured.' );
+		}
+
+		$query_vars           = $action->get_args()[0][0]->query_vars;
+		$meta_cache_is_primed = ! array_key_exists( 'update_term_meta_cache', $query_vars ) || true === $query_vars['update_term_meta_cache'];
+
+		// Check if the captured query vars have 'update_term_meta_cache' set to true.
+		$this->assertTrue(
+			$meta_cache_is_primed,
+			'Meta cache is not primed as expected when a custom meta key is registered.'
+		);
+	}
+
+	/**
+	 * @ticket 57749
+	 *
+	 * @dataProvider data_term_meta_cache_is_primed_when_there_are_registered_keys
+	 *
+	 * @covers WP_REST_Terms_Controller::get_items
+	 *
+	 * @param string $taxonomy The taxonomy being tested.
+	 * @param string $route    The REST API route to query for the test.
+	*/
+	public function test_term_meta_cache_is_not_primed_when_there_are_no_registered_keys( $taxonomy, $route ) {
+		global $wp_meta_keys;
+		$wp_meta_keys = array();
+
+		$action = new MockAction();
+		add_filter( 'pre_get_terms', array( $action, 'action' ), 10, 2 );
+
+		$request = new WP_REST_Request( 'GET', $route );
+		rest_get_server()->dispatch( $request );
+
+		if ( empty( $action->get_args()[0][0]->query_vars ) || ! is_array( $action->get_args()[0][0]->query_vars ) ) {
+			$this->fail( 'Query vars were not captured.' );
+		}
+
+		$query_vars = $action->get_args()[0][0]->query_vars;
+
+		$this->assertArrayHasKey(
+			'update_term_meta_cache',
+			$query_vars,
+			'Query vars should contain the key "update_term_meta_cache".'
+		);
+		$this->assertFalse(
+			$query_vars['update_term_meta_cache'],
+			'The "update_term_meta_cache" key should be false when no meta keys are registered.'
+		);
+	}
+
+	/**
+	 * Data provider for the test_term_meta_cache_is_primed_when_there_are_registered_keys and
+	 * test_term_meta_cache_is_not_primed_when_there_are_no_registered_keys methods.
+	 *
+	 * @return array
+	 */
+	public function data_term_meta_cache_is_primed_when_there_are_registered_keys() {
+		return array(
+			'categories taxonomy' => array( 'category', '/wp/v2/categories' ),
+			'tags taxonomy'       => array( 'post_tag', '/wp/v2/tags' ),
+		);
+	}
+
+	/**
 	 * Internal function used to disable an insert query which
 	 * will trigger a wpdb error for testing purposes.
 	 */

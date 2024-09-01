@@ -1649,8 +1649,19 @@ class WP_Test_REST_Posts_Controller extends WP_Test_REST_Post_Type_Controller_Te
 		$filter = new MockAction();
 		add_filter( 'update_post_metadata_cache', array( $filter, 'filter' ), 10, 2 );
 
+		// Register a meta key to ensure the parent post cache is primed. See @ticket 57749.
+		register_post_meta(
+			'attachment',
+			'test_attachment_key',
+			array(
+				'show_in_rest' => true,
+			)
+		);
+
 		$request = new WP_REST_Request( 'GET', '/wp/v2/media' );
 		rest_get_server()->dispatch( $request );
+
+		unregister_post_meta( 'attachment', 'test_attachment_key' );
 
 		$args = $filter->get_args();
 		$last = end( $args );
@@ -5389,6 +5400,77 @@ Shankle pork chop prosciutto ribeye ham hock pastrami. T-bone shank brisket baco
 			'sample-slug-2',
 			$post->post_name,
 			'The post slug was not set to "sample-slug-2"'
+		);
+	}
+
+	/**
+	 * @ticket 57749
+	 *
+	 * @covers WP_REST_Posts_Controller::prepare_items_query
+	 */
+	public function test_post_meta_cache_is_primed_when_there_are_registered_keys() {
+		global $wp_meta_keys;
+		$wp_meta_keys = array();
+
+		register_post_meta(
+			'post',
+			'test_meta_key',
+			array(
+				'show_in_rest' => true,
+			)
+		);
+
+		$action = new MockAction();
+		add_filter( 'pre_get_posts', array( $action, 'action' ), 10, 2 );
+
+		$request = new WP_REST_Request( 'GET', '/wp/v2/posts' );
+		rest_get_server()->dispatch( $request );
+
+		unregister_post_meta( 'post', 'test_meta_key' );
+
+		if ( empty( $action->get_args()[0][0]->query_vars ) || ! is_array( $action->get_args()[0][0]->query_vars ) ) {
+			$this->fail( 'Query vars were not captured.' );
+		}
+
+		$query_vars           = $action->get_args()[0][0]->query_vars;
+		$meta_cache_is_primed = ! array_key_exists( 'update_post_meta_cache', $query_vars ) || true === $query_vars['update_post_meta_cache'];
+
+		// Check if the captured query vars have 'update_post_meta_cache' set to true.
+		$this->assertTrue(
+			$meta_cache_is_primed,
+			'Meta cache is not primed as expected when a custom meta key is registered.'
+		);
+	}
+
+	/**
+	 * @ticket 57749
+	 *
+	 * @covers WP_REST_Posts_Controller::prepare_items_query
+	 */
+	public function test_post_meta_cache_is_not_primed_when_there_are_no_registered_keys() {
+		global $wp_meta_keys;
+		$wp_meta_keys = array();
+
+		$action = new MockAction();
+		add_filter( 'pre_get_posts', array( $action, 'action' ), 10, 2 );
+
+		$request = new WP_REST_Request( 'GET', '/wp/v2/posts' );
+		rest_get_server()->dispatch( $request );
+
+		if ( empty( $action->get_args()[0][0]->query_vars ) || ! is_array( $action->get_args()[0][0]->query_vars ) ) {
+			$this->fail( 'Query vars were not captured.' );
+		}
+
+		$query_vars = $action->get_args()[0][0]->query_vars;
+
+		$this->assertArrayHasKey(
+			'update_post_meta_cache',
+			$query_vars,
+			'Query vars should contain the key "update_post_meta_cache".'
+		);
+		$this->assertFalse(
+			$query_vars['update_post_meta_cache'],
+			'The "update_post_meta_cache" key should be false when no meta keys are registered.'
 		);
 	}
 
