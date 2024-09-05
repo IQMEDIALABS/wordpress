@@ -552,6 +552,9 @@
         'default' => true
       )
     ),
+    'usesContext' => array(
+      'enhancedPagination'
+    ),
     'supports' => array(
       'align' => true,
       'html' => false,
@@ -1107,7 +1110,11 @@
       ),
       'spacing' => array(
         'margin' => true,
-        'padding' => true
+        'padding' => true,
+        '__experimentalDefaultControls' => array(
+          'margin' => false,
+          'padding' => false
+        )
       ),
       'typography' => array(
         'fontSize' => true,
@@ -1124,8 +1131,15 @@
       ),
       'interactivity' => array(
         'clientNavigation' => true
+      ),
+      '__experimentalBorder' => array(
+        'radius' => true,
+        'color' => true,
+        'width' => true,
+        'style' => true
       )
-    )
+    ),
+    'style' => 'wp-block-comment-edit-link'
   ),
   'comment-reply-link' => array(
     '$schema' => 'https://schemas.wp.org/trunk/block.json',
@@ -1158,7 +1172,11 @@
       ),
       'spacing' => array(
         'margin' => true,
-        'padding' => true
+        'padding' => true,
+        '__experimentalDefaultControls' => array(
+          'margin' => false,
+          'padding' => false
+        )
       ),
       'typography' => array(
         'fontSize' => true,
@@ -1173,8 +1191,15 @@
           'fontSize' => true
         )
       ),
+      '__experimentalBorder' => array(
+        'radius' => true,
+        'color' => true,
+        'width' => true,
+        'style' => true
+      ),
       'html' => false
-    )
+    ),
+    'style' => 'wp-block-comment-reply-link'
   ),
   'comment-template' => array(
     '$schema' => 'https://schemas.wp.org/trunk/block.json',
