@@ -45,7 +45,7 @@ class Tests_Hooks_HasFilters extends WP_UnitTestCase {
 		$accepted_args = 2;
 
 		$hook->add_filter( $hook_name, $callback, $priority, $accepted_args );
-		$function_key = _wp_filter_build_unique_id( $hook_name, $callback, $priority );
+		$function_key = _wp_filter_build_unique_id( $callback );
 		unset( $hook->callbacks[ $priority ][ $function_key ] );
 
 		$this->assertFalse( $hook->has_filters() );
