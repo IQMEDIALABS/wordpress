@@ -15,12 +15,45 @@ class Tests_Blocks_InsertHookedBlocks extends WP_UnitTestCase {
 	const HOOKED_BLOCK_TYPE       = 'tests/hooked-block';
 	const OTHER_HOOKED_BLOCK_TYPE = 'tests/other-hooked-block';
 
-	const HOOKED_BLOCKS = array(
-		self::ANCHOR_BLOCK_TYPE => array(
-			'after'  => array( self::HOOKED_BLOCK_TYPE ),
-			'before' => array( self::OTHER_HOOKED_BLOCK_TYPE ),
-		),
-	);
+	/**
+	 * Set up.
+	 *
+	 * @ticket 61902.
+	 */
+	public static function wpSetUpBeforeClass() {
+		register_block_type(
+			self::HOOKED_BLOCK_TYPE,
+			array(
+				'block_hooks' => array(
+					self::ANCHOR_BLOCK_TYPE => 'after',
+				),
+			)
+		);
+
+		register_block_type(
+			self::OTHER_HOOKED_BLOCK_TYPE,
+			array(
+				'block_hooks' => array(
+					self::ANCHOR_BLOCK_TYPE => 'before',
+				),
+				'supports'    => array(
+					'multiple' => false,
+				),
+			)
+		);
+	}
+
+	/**
+	 * Tear down.
+	 *
+	 * @ticket 61902.
+	 */
+	public static function wpTearDownAfterClass() {
+		$registry = WP_Block_Type_Registry::get_instance();
+
+		$registry->unregister( self::HOOKED_BLOCK_TYPE );
+		$registry->unregister( self::OTHER_HOOKED_BLOCK_TYPE );
+	}
 
 	/**
 	 * @ticket 59572
@@ -34,7 +67,7 @@ class Tests_Blocks_InsertHookedBlocks extends WP_UnitTestCase {
 			'blockName' => self::ANCHOR_BLOCK_TYPE,
 		);
 
-		$actual = insert_hooked_blocks( $anchor_block, 'after', self::HOOKED_BLOCKS, array() );
+		$actual = insert_hooked_blocks( $anchor_block, 'after', get_hooked_blocks(), array() );
 		$this->assertSame(
 			'<!-- wp:' . self::HOOKED_BLOCK_TYPE . ' /-->',
 			$actual,
@@ -59,7 +92,7 @@ class Tests_Blocks_InsertHookedBlocks extends WP_UnitTestCase {
 			),
 		);
 
-		$actual = insert_hooked_blocks( $anchor_block, 'after', self::HOOKED_BLOCKS, array() );
+		$actual = insert_hooked_blocks( $anchor_block, 'after', get_hooked_blocks(), array() );
 		$this->assertSame(
 			'',
 			$actual,
@@ -84,11 +117,33 @@ class Tests_Blocks_InsertHookedBlocks extends WP_UnitTestCase {
 			),
 		);
 
-		$actual = insert_hooked_blocks( $anchor_block, 'before', self::HOOKED_BLOCKS, array() );
+		$actual = insert_hooked_blocks( $anchor_block, 'before', get_hooked_blocks(), array() );
 		$this->assertSame(
 			'<!-- wp:' . self::OTHER_HOOKED_BLOCK_TYPE . ' /-->',
 			$actual,
 			"Markup for newly hooked block should've been generated."
+		);
+	}
+
+	/**
+	 * @ticket 61902
+	 *
+	 * @covers ::insert_hooked_blocks
+	 */
+	public function test_insert_hooked_blocks_if_block_has_multiple_false_and_is_already_present() {
+		$anchor_block = array(
+			'blockName' => 'tests/anchor-block',
+		);
+
+		$context           = new WP_Block_Template();
+		$context->content  = '<!-- wp:' . self::ANCHOR_BLOCK_TYPE . ' /-->';
+		$context->content .= '<!-- wp:' . self::OTHER_HOOKED_BLOCK_TYPE . ' /-->';
+
+		$actual = insert_hooked_blocks( $anchor_block, 'before', get_hooked_blocks(), $context );
+		$this->assertSame(
+			'',
+			$actual,
+			'Hooked block with "multiple": false should not be inserted if another instance is already present.'
 		);
 	}
 
@@ -125,7 +180,7 @@ class Tests_Blocks_InsertHookedBlocks extends WP_UnitTestCase {
 			return $parsed_hooked_block;
 		};
 		add_filter( 'hooked_block_' . self::HOOKED_BLOCK_TYPE, $filter, 10, 4 );
-		$actual = insert_hooked_blocks( $anchor_block, 'after', self::HOOKED_BLOCKS, array() );
+		$actual = insert_hooked_blocks( $anchor_block, 'after', get_hooked_blocks(), array() );
 		remove_filter( 'hooked_block_' . self::HOOKED_BLOCK_TYPE, $filter );
 
 		$this->assertSame(
@@ -171,7 +226,7 @@ class Tests_Blocks_InsertHookedBlocks extends WP_UnitTestCase {
 			);
 		};
 		add_filter( 'hooked_block_' . self::HOOKED_BLOCK_TYPE, $filter, 10, 3 );
-		$actual = insert_hooked_blocks( $anchor_block, 'after', self::HOOKED_BLOCKS, array() );
+		$actual = insert_hooked_blocks( $anchor_block, 'after', get_hooked_blocks(), array() );
 		remove_filter( 'hooked_block_' . self::HOOKED_BLOCK_TYPE, $filter );
 
 		$this->assertSame(
@@ -213,7 +268,7 @@ class Tests_Blocks_InsertHookedBlocks extends WP_UnitTestCase {
 			return $parsed_hooked_block;
 		};
 		add_filter( 'hooked_block_' . self::HOOKED_BLOCK_TYPE, $filter, 10, 4 );
-		$actual = insert_hooked_blocks( $anchor_block, 'after', self::HOOKED_BLOCKS, array() );
+		$actual = insert_hooked_blocks( $anchor_block, 'after', get_hooked_blocks(), array() );
 		remove_filter( 'hooked_block_' . self::HOOKED_BLOCK_TYPE, $filter );
 
 		$this->assertSame( '', $actual, "No markup should've been generated for hooked block suppressed by filter." );
