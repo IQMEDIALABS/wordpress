@@ -245,6 +245,7 @@ class WP_REST_Posts_Controller extends WP_REST_Controller {
 		$parameter_mappings = array(
 			'author'         => 'author__in',
 			'author_exclude' => 'author__not_in',
+			'exact_search'   => 'exact',
 			'exclude'        => 'post__not_in',
 			'include'        => 'post__in',
 			'menu_order'     => 'menu_order',
@@ -2885,6 +2886,11 @@ class WP_REST_Posts_Controller extends WP_REST_Controller {
 				'type'        => 'integer',
 			);
 		}
+
+		$query_params['exact_search'] = array(
+			'description' => __( 'Use exact search instead of full search.' ),
+			'type'        => 'boolean',
+		);
 
 		$query_params['offset'] = array(
 			'description' => __( 'Offset the result set by a specific number of items.' ),
