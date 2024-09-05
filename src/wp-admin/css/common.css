@@ -1103,6 +1103,17 @@ th.action-links {
 	margin: 0;
 }
 
+.wp-filter .favorites-form .favorites-account {
+	display: flex;
+	align-items: center;
+	flex-wrap: wrap;
+	gap: 0.5rem;
+}
+
+.wp-filter .favorites-form .favorites-account input {
+	margin: 0;
+}
+
 /* Use flexbox only on the plugins install page. The `filter-links` and search form children will become flex items. */
 .plugin-install-php .wp-filter {
 	display: flex;
@@ -1288,11 +1299,13 @@ th.action-links {
 }
 
 .filtered-by .tags {
-	display: inline;
+	display: flex;
+	align-items: flex-start;
+	flex-wrap: wrap;
+	gap: 8px;
 }
 
 .filtered-by .tag {
-	margin: 0 5px;
 	padding: 4px 8px;
 	border: 1px solid #dcdcde;
 	box-shadow: 0 1px 1px rgba(0, 0, 0, 0.04);
@@ -1307,7 +1320,10 @@ th.action-links {
 }
 
 .filters-applied .filtered-by {
-	display: block;
+	display: flex;
+	align-items: center;
+	flex-wrap: wrap;
+	gap: 10px;
 }
 
 .filters-applied .filter-drawer {
