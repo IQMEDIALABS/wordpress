@@ -80,6 +80,7 @@ class WP_Test_REST_Post_Meta_Fields extends WP_Test_REST_TestCase {
 			'post',
 			'test_rest_disabled',
 			array(
+				'label'        => 'Test REST Disabled',
 				'show_in_rest' => false,
 				'type'         => 'string',
 			)
@@ -240,6 +241,29 @@ class WP_Test_REST_Post_Meta_Fields extends WP_Test_REST_TestCase {
 				'single'       => true,
 				'show_in_rest' => true,
 				'default'      => 'Goodnight Moon',
+			)
+		);
+
+		register_post_meta(
+			'post',
+			'with_label',
+			array(
+				'type'         => 'string',
+				'single'       => true,
+				'show_in_rest' => true,
+				'label'        => 'Meta Label',
+				'default'      => '',
+			)
+		);
+
+		register_post_meta(
+			'post',
+			'test_label_and_no_rest',
+			array(
+				'type'    => 'string',
+				'single'  => true,
+				'label'   => 'Meta Label',
+				'default' => '',
 			)
 		);
 
@@ -3096,6 +3120,19 @@ class WP_Test_REST_Post_Meta_Fields extends WP_Test_REST_TestCase {
 	}
 
 	/**
+	 * @ticket 61998
+	 */
+	public function test_title_is_added_to_schema() {
+		$request  = new WP_REST_Request( 'OPTIONS', '/wp/v2/posts' );
+		$response = rest_do_request( $request );
+
+		$schema = $response->get_data()['schema']['properties']['meta']['properties']['with_label'];
+
+		$this->assertArrayHasKey( 'default', $schema );
+		$this->assertSame( 'Meta Label', $schema['title'] );
+	}
+
+	/**
 	 * Ensures that REST API calls with post meta containing the default value for the
 	 * registered meta field stores the default value into the database.
 	 *
@@ -3948,6 +3985,24 @@ class WP_Test_REST_Post_Meta_Fields extends WP_Test_REST_TestCase {
 
 		unregister_post_meta( $post_type, 'foo' );
 		wp_delete_post( $post_id, true );
+	}
+
+	/**
+	 * @ticket 61998
+	 */
+	public function test_get_registered_label_without_rest() {
+		add_post_meta( self::$post_id, 'test_label_and_no_rest', 'val1' );
+		$request = new WP_REST_Request( 'GET', sprintf( '/wp/v2/posts/%d', self::$post_id ) );
+
+		$response = rest_get_server()->dispatch( $request );
+		$this->assertSame( 200, $response->get_status() );
+
+		$data = $response->get_data();
+		$this->assertArrayHasKey( 'meta', $data );
+
+		$meta = (array) $data['meta'];
+		$this->assertArrayHasKey( 'test_label_and_no_rest', $meta );
+		$this->assertSame( 'val1', $meta['test_label_and_no_rest'] );
 	}
 
 	/**
