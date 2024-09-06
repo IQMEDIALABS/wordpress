@@ -986,7 +986,7 @@ function _wp_call_all_hook( $args ) {
  *                                         associated with a particular action are executed.
  * @return string Unique function ID for usage as array key.
  */
-function _wp_filter_build_unique_id( $hook_name, $callback, $priority ) {
+function _wp_filter_build_unique_id( $callback ) {
 	if ( is_string( $callback ) ) {
 		return $callback;
 	}
