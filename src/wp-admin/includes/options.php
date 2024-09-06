@@ -16,11 +16,63 @@ function options_discussion_add_js() {
 	?>
 	<script>
 	(function($){
-		var parent = $( '#show_avatars' ),
-			children = $( '.avatar-settings' );
-		parent.on( 'change', function(){
-			children.toggleClass( 'hide-if-js', ! this.checked );
-		});
+		function toggleEditableState(parentCheckboxId, childInputElement){
+			var parentCheckbox = $(parentCheckboxId ),
+				childrenInputs = $(childInputElement );
+				ariaLiveRegion = $('#aria-live-region');
+
+
+			function applyDisabledStyle(element, isDisabled) {
+				element.prop('disabled', isDisabled);
+				if (isDisabled) {
+					element.css({
+						'color': 'gray',
+						'opacity': '0.85',
+						'cursor': 'not-allowed'
+					});
+					element.closest('label').css({
+						'color': 'gray',
+						'opacity': '0.85',
+						'cursor': 'not-allowed',
+					});
+				} else {
+					element.css({
+						'color': '',
+						'opacity': '',
+						'cursor': ''
+					});
+					element.closest('label').css({
+						'color': '',
+						'opacity': '',
+						'cursor': '',
+					});
+				}
+			}
+
+			// Set the initial state based on the checkbox state
+			childrenInputs.find('input, select, textarea').each(function() {
+				applyDisabledStyle($(this), !parentCheckbox.prop('checked'));
+			});
+			parentCheckbox.attr('aria-expanded', parentCheckbox.prop('checked'));
+			// Update the disabled state of children on parent checkbox change
+			parentCheckbox.on('change', function() {
+				var isChecked = this.checked;
+				childrenInputs.find('input, select, textarea').each(function() {
+					applyDisabledStyle($(this), !isChecked);
+				});
+				$(this).attr('aria-expanded', isChecked);
+
+				// Announce the change to screen readers.
+				var message = this.checked ? 'Checked Checkbox, Dependent fields are now editable.' : 'Unchecked Checkbox, Dependent fields are now disabled.';
+				ariaLiveRegion.text( message );
+			});
+		}
+
+		// Call function for each expandable section of discussion settings.
+		toggleEditableState('#close_comments_for_old_posts', '.close-comments-setting' );
+		toggleEditableState('#thread_comments', '.thread-comments-setting' );
+		toggleEditableState('#page_comments', '.pagination-setting' );
+		toggleEditableState( '#show_avatars', '.avatar-settings' );
 	})(jQuery);
 	</script>
 	<?php
